@@ -3,6 +3,10 @@ package com.aditya.projects.airBnbApp.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -19,6 +23,19 @@ public class Hotel {
 
     private String city;
 
-    @Column(columnDefinition = "")
+    @Column(columnDefinition = "TEXT[]") //TEXT[] - url of images
     private String[] photos;
+
+    @Column(columnDefinition = "TEXT[]")
+    private String amenities;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    @Embedded
+    private HotelContactInfo contactInfo;
+
 }
