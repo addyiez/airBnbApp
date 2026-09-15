@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -54,6 +55,14 @@ public class Booking {
     @Column(nullable = false)
     private BookingStatus status;
 
+    @ManyToMany(fetch = FetchType.LAZY) //one booking have many guests and one guest can have many bookings
+   //joinTable not joinColumn because manyToMany relationship
+    @JoinTable( //generated automatically by hibernate, but we can customize it using @JoinTable annotation
+            name = "booking_guest",
+            joinColumns = @JoinColumn(name = "booking_id"),
+            inverseJoinColumns = @JoinColumn(name = "guest_id") //inverseJoinColumns - foreign key to the other entity (Guest)
+    )
+    private Set<Guest> guests;
 
 
 
