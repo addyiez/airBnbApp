@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -41,4 +42,6 @@ public class Hotel {
     @Column(nullable = false)
     private Boolean active; //shows whether the hotel is active or not.
 
+    @OneToMany(mappedBy = "hotel", fetch = FetchType.LAZY)
+    private List<Room> rooms; //List of rooms available in the hotel
 }
