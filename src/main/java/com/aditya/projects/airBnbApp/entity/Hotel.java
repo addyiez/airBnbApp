@@ -28,7 +28,7 @@ public class Hotel {
     private String[] photos;
 
     @Column(columnDefinition = "TEXT[]")
-    private String amenities;
+    private String[] amenities;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
