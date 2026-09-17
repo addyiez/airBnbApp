@@ -1,7 +1,6 @@
 package com.aditya.projects.airBnbApp.controller;
 
 import com.aditya.projects.airBnbApp.dto.HotelDto;
-import com.aditya.projects.airBnbApp.repository.HotelRepository;
 import com.aditya.projects.airBnbApp.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +23,10 @@ public class HotelController {
         return new ResponseEntity<>(hotel, HttpStatus.CREATED);
     }
 
-    @GetMapping
-    public ResponseEntity<HotelDto> getHotelById(@RequestParam Long id) {
-        log.info("Received request to fetch hotel with id: {}", id);
-        HotelDto hotel = hotelService.getHotelById(id);
-        return new ResponseEntity<>(hotel, HttpStatus.OK);
+    @GetMapping("/{hotelId}")
+    public ResponseEntity<HotelDto> getHotelById(@PathVariable Long hotelId) {
+        log.info("Received request to fetch hotel with id: {}", hotelId);
+        HotelDto hotelDto = hotelService.getHotelById(hotelId);
+        return ResponseEntity.ok(hotelDto);
     }
 }
