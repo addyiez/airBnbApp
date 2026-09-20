@@ -29,4 +29,20 @@ public class HotelController {
         HotelDto hotelDto = hotelService.getHotelById(hotelId);
         return ResponseEntity.ok(hotelDto);
     }
+
+    @PutMapping("/{hotelId}")
+    public ResponseEntity<HotelDto> updateHotelById(@PathVariable Long hotelId, @RequestBody HotelDto hotelDto) {
+        log.info("Received request to update hotel with id: {}", hotelId);
+        HotelDto hotel = hotelService.updateHotelById(hotelId, hotelDto);
+        return ResponseEntity.ok(hotel);
+
+    }
+
+    @DeleteMapping("/{hotelId}")
+    public ResponseEntity<Void> deleteHotelById(@PathVariable Long hotelId) {
+        log.info("Received request to delete hotel with id: {}", hotelId);
+        hotelService.deleteHotelById(hotelId);
+        return ResponseEntity.noContent().build();
+
+    }
 }
