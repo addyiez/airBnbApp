@@ -1,8 +1,7 @@
 package com.aditya.projects.airBnbApp.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -19,6 +18,9 @@ import java.time.LocalDateTime;
         name = "unique_hotel_room_date",
         columnNames = {"hotel_id", "room_id", "date"}
 ))
+@Builder
+@AllArgsConstructor //JPA requires a constructor with all arguments for entity classes
+@NoArgsConstructor //JPA requires a no-argument constructor for entity classes
 public class Inventory {
 
     @Id

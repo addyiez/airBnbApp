@@ -6,6 +6,7 @@ import com.aditya.projects.airBnbApp.entity.Room;
 import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.repository.HotelRepository;
 import com.aditya.projects.airBnbApp.repository.RoomRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -21,6 +22,7 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
     private final HotelRepository hotelRepository;
+    private final InventoryService inventoryService;
     private final ModelMapper modelMapper;
 
     @Override
@@ -33,7 +35,9 @@ public class RoomServiceImpl implements RoomService {
         room.setHotel(hotel);
         room = roomRepository.save(room); // Saving the room entity to the database
 
-        //TODO: create inventory as soon as room is created and if hotel is active
+        if(hotel.getActive()){
+            inventoryService.initializeRoomForAYear(room);
+        }
 
         return modelMapper.map(room, RoomDto.class); // Mapping the saved Room entity back to RoomDto
     }
@@ -61,14 +65,15 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional
     public void deleteRoomById(Long roomId) {
         log.info("Deleting room with id: {}", roomId);
-        boolean exists = roomRepository.existsById(roomId);
-        if (!exists) {
-            throw new ResourceNotFoundException("Room not found with id: " + roomId);
-        }
+        Room room = roomRepository
+                .findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + roomId));
+
+        inventoryService.deleteFutureInventories(room);
         roomRepository.deleteById(roomId);
     }
 
-    //TODO: delete the future inventories for this room when room is deleted
 }
