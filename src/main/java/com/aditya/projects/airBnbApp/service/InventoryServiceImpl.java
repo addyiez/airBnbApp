@@ -52,6 +52,9 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public Page<HotelDto> searchHotels(HotelSearchRequest hotelSearchRequest) {
         Pageable pageable = PageRequest.of(hotelSearchRequest.getPage(), hotelSearchRequest.getSize());
+
+
+
         return null;
     }
 }
