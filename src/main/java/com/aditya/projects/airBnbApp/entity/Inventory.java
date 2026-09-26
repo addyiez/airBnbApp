@@ -41,6 +41,9 @@ public class Inventory {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer bookedCount; //Number of rooms booked for this date
 
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer reservedCount;
+
     @Column(nullable = false)
     private Integer totalCount; //Total number of rooms available for this date
 
