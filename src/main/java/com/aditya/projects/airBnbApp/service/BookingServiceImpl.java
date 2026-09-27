@@ -57,7 +57,7 @@ public class BookingServiceImpl implements BookingService{
         //Reserve the room/ update the booked count of inventories
 
         for(Inventory inventory : inventoryList){
-            inventory.setBookedCount(inventory.getBookedCount() + bookingRequest.getRoomsCount());
+            inventory.setReservedCount(inventory.getReservedCount() + bookingRequest.getRoomsCount());
         }
 
         inventoryRepository.saveAll(inventoryList);
