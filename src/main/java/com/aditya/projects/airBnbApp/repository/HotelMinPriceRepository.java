@@ -1,6 +1,7 @@
 package com.aditya.projects.airBnbApp.repository;
 
 import com.aditya.projects.airBnbApp.dto.HotelPriceDto;
+import com.aditya.projects.airBnbApp.entity.Hotel;
 import com.aditya.projects.airBnbApp.entity.HotelMinPrice;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Repository
 public interface HotelMinPriceRepository extends JpaRepository<HotelMinPrice, Long> {
@@ -31,4 +33,6 @@ public interface HotelMinPriceRepository extends JpaRepository<HotelMinPrice, Lo
             @Param("dateCount") Long dateCount,
             Pageable pageable
     );
+
+    Optional<HotelMinPrice> findByHotelAndDate(Hotel hotel, LocalDate date);
 }
