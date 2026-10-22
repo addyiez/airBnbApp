@@ -1,5 +1,6 @@
 package com.aditya.projects.airBnbApp.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,6 +44,7 @@ public class Hotel {
     private Boolean active; //shows whether the hotel is active or not.
 
     @OneToMany(mappedBy = "hotel", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Room> rooms; //List of rooms available in the hotel
 
     @ManyToOne

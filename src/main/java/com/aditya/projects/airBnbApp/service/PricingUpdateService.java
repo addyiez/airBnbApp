@@ -7,10 +7,12 @@ import com.aditya.projects.airBnbApp.repository.HotelMinPriceRepository;
 import com.aditya.projects.airBnbApp.repository.HotelRepository;
 import com.aditya.projects.airBnbApp.repository.InventoryRepository;
 import com.aditya.projects.airBnbApp.strategy.PricingService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class PricingUpdateService {
 
     //Schedular to update the inventory and HotelMinPrice tables every hour
@@ -33,6 +36,8 @@ public class PricingUpdateService {
     private final HotelMinPriceRepository hotelMinPriceRepository;
     private final PricingService pricingService;
 
+    @Scheduled(cron = "0 0 * * * *") //For every hour 0 min 0 sec, run this. for 5min("0 */5 * * * *")- cron expressions
+    //@Scheduled(cron = "*/5 * * * * *") //for every 5 seconds
     public void updatePrice() {
         int page = 0;
         int batchSize = 100;
@@ -49,6 +54,7 @@ public class PricingUpdateService {
     }
 
     private void updateHotelPrices(Hotel hotel) {
+        log.info("Update hotel prices for hotel id: {}", hotel.getId());
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = LocalDate.now().plusYears(1);
 
