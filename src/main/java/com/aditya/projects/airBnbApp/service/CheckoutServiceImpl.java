@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -39,6 +41,23 @@ public class CheckoutServiceImpl implements CheckoutService {
                     .setCustomer(customer.getId())
                     .setSuccessUrl(successUrl)
                     .setCancelUrl(failureUrl)
+                    .addLineItem(
+                            SessionCreateParams.LineItem.builder()
+                                    .setQuantity(1L)
+                                    .setPriceData(
+                                            SessionCreateParams.LineItem.PriceData.builder()
+                                                    .setCurrency("inr")
+                                                    .setUnitAmount(booking.getAmount().multiply(BigDecimal.valueOf(100)).longValue()) // Convert to cents
+                                                    .setProductData(
+                                                            SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                    .setName("Booking for " + booking.getHotel().getName() + " - Room: " + booking.getRoom().getType())
+                                                                    .setDescription("Booking ID: " + booking.getId())
+                                                                    .build()
+                                                    )
+                                                    .build()
+                                    )
+                                    .build()
+                    )
                     .build();
 
             Session session = Session.create(sessionParams);
