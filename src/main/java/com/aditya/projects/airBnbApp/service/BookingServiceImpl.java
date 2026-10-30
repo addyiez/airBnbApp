@@ -92,8 +92,8 @@ public class BookingServiceImpl implements BookingService{
                         new ResourceNotFoundException("Booking Not found with id: " +bookingId));
         User user = getCurrentUser();
 
-        if(user.equals(booking.getUser())){
-            throw new UnAuthorizedException("You are not authorized to add guests for this booking");
+        if(!user.equals(booking.getUser())){
+            throw new UnAuthorizedException("Booking does not belong to the user with id: " +user.getId());
         }
 
         if(hasBookingExpired(booking)){
@@ -114,6 +114,22 @@ public class BookingServiceImpl implements BookingService{
         booking = bookingRepository.save(booking);
 
         return modelMapper.map(booking, BookingDto.class);
+    }
+
+    @Override
+    public String initiatePayment(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() ->
+                new ResourceNotFoundException("Booking Not found with id: " +bookingId));
+        User user = getCurrentUser();
+
+        if(!user.equals(booking.getUser())){
+            throw new UnAuthorizedException("Booking does not belong to the user with id: " +user.getId());
+        }
+        if(hasBookingExpired(booking)){
+            throw new IllegalStateException("Booking has expired");
+        }
+
+        return "";
     }
 
     public boolean hasBookingExpired(Booking booking){
