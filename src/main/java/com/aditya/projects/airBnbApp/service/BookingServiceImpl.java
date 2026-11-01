@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -31,9 +32,13 @@ public class BookingServiceImpl implements BookingService{
     private final HotelRepository hotelRepository;
     private final RoomRepository roomRepository;
     private final ModelMapper modelMapper;
+    private final CheckoutService checkoutService;
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @Override
-    @Transactional //is use for if something happen we can rollback
+    @Transactional //is use for if something happen we can roll back
     public BookingDto initialiseBooking(BookingRequest bookingRequest) {
 
         log.info("Initialize booking for Hotel: {}, room: {}, date {}-{}", bookingRequest.getHotelId(),
@@ -76,7 +81,7 @@ public class BookingServiceImpl implements BookingService{
                 .checkOutDate(bookingRequest.getCheckOutDate())
                 .user(getCurrentUser())
                 .roomsCount(bookingRequest.getRoomsCount())
-                .amount(BigDecimal.TEN)
+                .amount(new BigDecimal("500.00"))
                 .build();
 
         booking = bookingRepository.save(booking);
@@ -92,10 +97,16 @@ public class BookingServiceImpl implements BookingService{
                         new ResourceNotFoundException("Booking Not found with id: " +bookingId));
         User user = getCurrentUser();
 
-        if(!user.equals(booking.getUser())){
-            throw new UnAuthorizedException("Booking does not belong to the user with id: " +user.getId());
+        log.info("Authenticated User ID: {}", user.getId());
+        log.info("Booking ID: {}", booking.getId());
+        log.info("Booking Owner ID: {}", booking.getUser().getId());
+        if (!user.getId().equals(booking.getUser().getId())) {
+            throw new UnAuthorizedException(
+                    "Booking does not belong to the user with id: " + user.getId()
+            );
         }
 
+        log.info("Booking Status: {}", booking.getBookingStatus());
         if(hasBookingExpired(booking)){
             throw new IllegalStateException("Booking has expired");
         }
@@ -122,14 +133,19 @@ public class BookingServiceImpl implements BookingService{
                 new ResourceNotFoundException("Booking Not found with id: " +bookingId));
         User user = getCurrentUser();
 
-        if(!user.equals(booking.getUser())){
-            throw new UnAuthorizedException("Booking does not belong to the user with id: " +user.getId());
+        if (!user.getId().equals(booking.getUser().getId())) {
+            throw new UnAuthorizedException(
+                    "Booking does not belong to the user with id: " + user.getId()
+            );
         }
         if(hasBookingExpired(booking)){
             throw new IllegalStateException("Booking has expired");
         }
 
-        return "";
+        String sessionUrl = checkoutService.getCheckoutSession(booking,
+                frontendUrl+"/payments/success", frontendUrl+"/payments/failure");
+
+        return sessionUrl;
     }
 
     public boolean hasBookingExpired(Booking booking){
