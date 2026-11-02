@@ -8,6 +8,8 @@ import com.aditya.projects.airBnbApp.entity.enums.BookingStatus;
 import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.exception.UnAuthorizedException;
 import com.aditya.projects.airBnbApp.repository.*;
+import com.stripe.model.Event;
+import com.stripe.model.checkout.Session;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -128,6 +130,7 @@ public class BookingServiceImpl implements BookingService{
     }
 
     @Override
+    @Transactional
     public String initiatePayment(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() ->
                 new ResourceNotFoundException("Booking Not found with id: " +bookingId));
@@ -146,6 +149,34 @@ public class BookingServiceImpl implements BookingService{
                 frontendUrl+"/payments/success", frontendUrl+"/payments/failure");
 
         return sessionUrl;
+    }
+
+    @Override
+    @Transactional
+    public void capturePayment(Event event) {
+        if ("checkout.session.completed".equals(event.getType())) {
+            Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+            if (session == null) return;
+
+            String sessionId = session.getId();
+            Booking booking = bookingRepository.findByPaymentSessionId(sessionId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Booking not found for session ID: " + sessionId));
+
+            booking.setBookingStatus(BookingStatus.CONFIRMED);
+            bookingRepository.save(booking);
+            log.info("Payment captured and booking confirmed for booking ID: {}", booking.getId());
+
+            inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(),
+                        booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+            inventoryRepository.confirmBooking(booking.getRoom().getId(),
+                        booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+            log.info("Successfully confirmed booking and updated inventory for booking ID: {}", booking.getId());
+        } else {
+                log.warn("Unhandled event type: {}", event.getType());
+            }
+
     }
 
     public boolean hasBookingExpired(Booking booking){
