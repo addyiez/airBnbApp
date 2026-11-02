@@ -5,6 +5,7 @@ import com.aditya.projects.airBnbApp.dto.BookingRequest;
 import com.aditya.projects.airBnbApp.dto.GuestDto;
 import com.aditya.projects.airBnbApp.entity.*;
 import com.aditya.projects.airBnbApp.entity.enums.BookingStatus;
+import com.aditya.projects.airBnbApp.entity.enums.PaymentStatus;
 import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.exception.UnAuthorizedException;
 import com.aditya.projects.airBnbApp.repository.*;
@@ -77,6 +78,7 @@ public class BookingServiceImpl implements BookingService{
 
         Booking booking = Booking.builder()
                 .bookingStatus(BookingStatus.RESERVED)
+                .paymentStatus(PaymentStatus.PENDING)
                 .hotel(hotel)
                 .room(room)
                 .checkInDate(bookingRequest.getCheckInDate())

@@ -55,9 +55,9 @@ public class Booking {
     @Column(nullable = false)
     private BookingStatus bookingStatus;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(nullable = false)
-//    private PaymentStatus paymentStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentStatus paymentStatus;
 
     @ManyToMany(fetch = FetchType.LAZY) //one booking have many guests and one guest can have many bookings
    //joinTable not joinColumn because manyToMany relationship
