@@ -5,12 +5,14 @@ import com.aditya.projects.airBnbApp.dto.BookingRequest;
 import com.aditya.projects.airBnbApp.dto.GuestDto;
 import com.aditya.projects.airBnbApp.entity.*;
 import com.aditya.projects.airBnbApp.entity.enums.BookingStatus;
-import com.aditya.projects.airBnbApp.entity.enums.PaymentStatus;
 import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.exception.UnAuthorizedException;
 import com.aditya.projects.airBnbApp.repository.*;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
+import com.stripe.param.RefundCreateParams;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +80,7 @@ public class BookingServiceImpl implements BookingService{
 
         Booking booking = Booking.builder()
                 .bookingStatus(BookingStatus.RESERVED)
-                .paymentStatus(PaymentStatus.PENDING)
+                //.paymentStatus(PaymentStatus.PENDING)
                 .hotel(hotel)
                 .room(room)
                 .checkInDate(bookingRequest.getCheckInDate())
@@ -178,6 +180,45 @@ public class BookingServiceImpl implements BookingService{
         } else {
                 log.warn("Unhandled event type: {}", event.getType());
             }
+
+    }
+
+    @Override
+    @Transactional
+    public void cancelBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() ->
+                new ResourceNotFoundException("Booking Not found with id: " +bookingId));
+        User user = getCurrentUser();
+
+        if (!user.getId().equals(booking.getUser().getId())) {
+            throw new UnAuthorizedException(
+                    "Booking does not belong to the user with id: " + user.getId()
+            );
+        }
+        if(booking.getBookingStatus() != BookingStatus.CONFIRMED){
+            throw new IllegalStateException("Booking is not confirmed, cannot cancel");
+        }
+
+        booking.setBookingStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+
+        inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(),
+                booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+        inventoryRepository.cancelBooking(booking.getRoom().getId(),
+                booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+        //handle the refund
+        try {
+            Session session = Session.retrieve(booking.getPaymentSessionId());
+            RefundCreateParams refundParams = RefundCreateParams.builder()
+                    .setPaymentIntent(session.getPaymentIntent())
+                    .build();
+
+            Refund.create(refundParams);
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
