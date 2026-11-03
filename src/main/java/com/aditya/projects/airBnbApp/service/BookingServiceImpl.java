@@ -12,6 +12,9 @@ import com.aditya.projects.airBnbApp.strategy.PricingService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.Refund;
+import com.stripe.exception.EventDataObjectDeserializationException;
+import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.RefundCreateParams;
 import jakarta.transaction.Transactional;
@@ -156,29 +159,48 @@ public class BookingServiceImpl implements BookingService{
     @Override
     @Transactional
     public void capturePayment(Event event) {
-        if ("checkout.session.completed".equals(event.getType())) {
-            Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-            if (session == null) return;
+        if (!"checkout.session.completed".equals(event.getType())) {
+            log.warn("Unhandled event type: {}", event.getType());
+            return;
+        }
 
-            String sessionId = session.getId();
-            Booking booking = bookingRepository.findByPaymentSessionId(sessionId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Booking not found for session ID: " + sessionId));
-
-            booking.setBookingStatus(BookingStatus.CONFIRMED);
-            bookingRepository.save(booking);
-            log.info("Payment captured and booking confirmed for booking ID: {}", booking.getId());
-
-            inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(),
-                        booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
-
-            inventoryRepository.confirmBooking(booking.getRoom().getId(),
-                        booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
-
-            log.info("Successfully confirmed booking and updated inventory for booking ID: {}", booking.getId());
+        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+        StripeObject stripeObject;
+        if (deserializer.getObject().isPresent()) {
+            stripeObject = deserializer.getObject().get();
         } else {
-                log.warn("Unhandled event type: {}", event.getType());
+            try {
+                stripeObject = deserializer.deserializeUnsafe();
+            } catch (EventDataObjectDeserializationException e) {
+                log.error("Could not deserialize Stripe session for event: {}", event.getId(), e);
+                throw new IllegalStateException("Stripe deserialization failed", e);
             }
+        }
 
+        Session session = (Session) stripeObject;
+        String sessionId = session.getId();
+
+        Booking booking = bookingRepository.findByPaymentSessionId(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Booking not found for session ID: " + sessionId));
+
+        booking.setBookingStatus(BookingStatus.CONFIRMED);
+        bookingRepository.save(booking);
+
+        inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(),
+                booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+        int updated = inventoryRepository.confirmBooking(booking.getRoom().getId(),
+                booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+        long days = java.time.temporal.ChronoUnit.DAYS.between(
+                booking.getCheckInDate(), booking.getCheckOutDate());
+        if (updated != days) {
+            throw new IllegalStateException("Inventory confirm updated " + updated
+                    + " rows, expected " + days + " for booking " + booking.getId());
+        }
+
+        log.info("Booking {} confirmed and inventory updated", booking.getId());
     }
 
     @Override
