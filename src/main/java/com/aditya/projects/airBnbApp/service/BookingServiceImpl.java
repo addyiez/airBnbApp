@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -240,6 +241,20 @@ public class BookingServiceImpl implements BookingService{
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Override
+    public String getBookingStatus(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() ->
+                new ResourceNotFoundException("Booking Not found with id: " +bookingId));
+        User user = getCurrentUser();
+
+        if (!user.getId().equals(booking.getUser().getId())) {
+            throw new UnAuthorizedException(
+                    "Booking does not belong to the user with id: " + user.getId()
+            );
+        }
+        return booking.getBookingStatus().name();
     }
 
     public boolean hasBookingExpired(Booking booking){
