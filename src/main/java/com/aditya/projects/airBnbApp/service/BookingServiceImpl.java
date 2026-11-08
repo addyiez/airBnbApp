@@ -31,6 +31,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+import static com.aditya.projects.airBnbApp.util.AppUtils.getCurrentUser;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -261,7 +263,4 @@ public class BookingServiceImpl implements BookingService{
         return booking.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now());
     }
 
-    public User getCurrentUser(){
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
 }
