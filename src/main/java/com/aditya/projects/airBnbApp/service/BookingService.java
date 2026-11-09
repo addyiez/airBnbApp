@@ -6,8 +6,6 @@ import com.aditya.projects.airBnbApp.dto.GuestDto;
 import com.stripe.model.Event;
 
 import java.util.List;
-import java.util.Map;
-
 public interface BookingService {
 
     BookingDto initialiseBooking(BookingRequest bookingRequest);
@@ -21,4 +19,6 @@ public interface BookingService {
     void cancelBooking(Long bookingId);
 
     String getBookingStatus(Long bookingId);
+
+    List<BookingDto> getAllBookingsByHotelId(Long hotelId);
 }

@@ -22,17 +22,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.aditya.projects.airBnbApp.util.AppUtils.getCurrentUser;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -257,6 +256,22 @@ public class BookingServiceImpl implements BookingService{
             );
         }
         return booking.getBookingStatus().name();
+    }
+
+    @Override
+    public List<BookingDto> getAllBookingsByHotelId(Long hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID:" +hotelId));
+        User user = getCurrentUser();
+
+        log.info("Getting all bookings for the hotel with ID: {}",hotelId);
+
+        if(!user.equals(hotel.getOwner())) throw new AccessDeniedException("You are not the owner of hotel with ID:"+hotelId);
+
+        List<Booking> bookings = bookingRepository.findByHotel(hotel);
+
+        return bookings.stream()
+                .map((element) -> modelMapper.map(element, BookingDto.class))
+                .collect(Collectors.toList());
     }
 
     public boolean hasBookingExpired(Booking booking){
