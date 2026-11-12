@@ -80,4 +80,5 @@ public class HotelController {
 
         return ResponseEntity.ok(bookingService.getHotelReport(hotelId, startDate, endDate));
     }
+
 }
