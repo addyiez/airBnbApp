@@ -1,5 +1,6 @@
 package com.aditya.projects.airBnbApp.entity;
 
+import com.aditya.projects.airBnbApp.entity.enums.Gender;
 import com.aditya.projects.airBnbApp.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -28,6 +30,11 @@ public class User implements UserDetails {
     private Set<Role> roles; //List of roles assigned to the user (e.g., ROLE_USER, ROLE_ADMIN)
 
     private String name;
+
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(unique = true, nullable = false)
     private String email;
