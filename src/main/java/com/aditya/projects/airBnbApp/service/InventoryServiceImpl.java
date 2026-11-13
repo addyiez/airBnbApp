@@ -1,13 +1,15 @@
 package com.aditya.projects.airBnbApp.service;
 
-import com.aditya.projects.airBnbApp.dto.HotelDto;
 import com.aditya.projects.airBnbApp.dto.HotelPriceDto;
 import com.aditya.projects.airBnbApp.dto.HotelSearchRequest;
-import com.aditya.projects.airBnbApp.entity.Hotel;
+import com.aditya.projects.airBnbApp.dto.InventoryDto;
 import com.aditya.projects.airBnbApp.entity.Inventory;
 import com.aditya.projects.airBnbApp.entity.Room;
+import com.aditya.projects.airBnbApp.entity.User;
+import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.repository.HotelMinPriceRepository;
 import com.aditya.projects.airBnbApp.repository.InventoryRepository;
+import com.aditya.projects.airBnbApp.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -17,13 +19,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.aditya.projects.airBnbApp.util.AppUtils.getCurrentUser;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class InventoryServiceImpl implements InventoryService {
+    private final RoomRepository roomRepository;
 
     private final InventoryRepository inventoryRepository;
     private final HotelMinPriceRepository hotelMinPriceRepository;
@@ -79,5 +87,24 @@ public class InventoryServiceImpl implements InventoryService {
          */
 
         return hotelPage;
+    }
+
+    @Override
+    public List<InventoryDto> getAllInventoryByRoom(Long roomId) {
+        log.info("Fetching all inventory for room with id: {}", roomId);
+        Room room = roomRepository
+                .findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + roomId));
+
+        User user = getCurrentUser();
+
+        if(!user.equals(room.getHotel().getOwner())) {
+            throw new AccessDeniedException("You are not the owner of this hotel with id: " + room.getHotel().getId());
+        }
+
+        return inventoryRepository.findByRoomOrderByDate(room)
+                .stream()
+                .map((element) -> modelMapper.map(element, InventoryDto.class))
+                .collect(Collectors.toList());
     }
 }
