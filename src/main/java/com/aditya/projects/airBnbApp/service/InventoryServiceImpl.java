@@ -3,6 +3,7 @@ package com.aditya.projects.airBnbApp.service;
 import com.aditya.projects.airBnbApp.dto.HotelPriceDto;
 import com.aditya.projects.airBnbApp.dto.HotelSearchRequest;
 import com.aditya.projects.airBnbApp.dto.InventoryDto;
+import com.aditya.projects.airBnbApp.dto.UpdateInventoryRequestDto;
 import com.aditya.projects.airBnbApp.entity.Inventory;
 import com.aditya.projects.airBnbApp.entity.Room;
 import com.aditya.projects.airBnbApp.entity.User;
@@ -10,6 +11,7 @@ import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.repository.HotelMinPriceRepository;
 import com.aditya.projects.airBnbApp.repository.InventoryRepository;
 import com.aditya.projects.airBnbApp.repository.RoomRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -106,5 +108,28 @@ public class InventoryServiceImpl implements InventoryService {
                 .stream()
                 .map((element) -> modelMapper.map(element, InventoryDto.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateInventory(Long roomId, UpdateInventoryRequestDto updateInventoryRequestDto) {
+        log.info("Updating inventory for room with id: {}", roomId);
+        Room room = roomRepository
+                .findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + roomId));
+
+        User user = getCurrentUser();
+
+        if(!user.equals(room.getHotel().getOwner())) {
+            throw new AccessDeniedException("You are not the owner of this hotel with id: " + room.getHotel().getId());
+        }
+
+        inventoryRepository.getInventoryAndLockBeforeUpdate(roomId, updateInventoryRequestDto.getStartDate(),
+                updateInventoryRequestDto.getEndDate());
+
+        inventoryRepository.updateInventory(roomId, updateInventoryRequestDto.getStartDate(),
+                updateInventoryRequestDto.getEndDate(),
+                updateInventoryRequestDto.getSurgeFactor(),
+                updateInventoryRequestDto.getClosed());
     }
 }
