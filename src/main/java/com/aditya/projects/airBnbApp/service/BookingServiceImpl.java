@@ -152,6 +152,7 @@ public class BookingServiceImpl implements BookingService{
                     "Booking does not belong to the user with id: " + user.getId()
             );
         }
+
         if(hasBookingExpired(booking)){
             throw new IllegalStateException("Booking has expired");
         }
