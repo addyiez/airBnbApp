@@ -1,10 +1,13 @@
 package com.aditya.projects.airBnbApp.service;
 
 import com.aditya.projects.airBnbApp.dto.ProfileUpdateRequestDto;
+import com.aditya.projects.airBnbApp.dto.UserDto;
 import com.aditya.projects.airBnbApp.entity.User;
 import com.aditya.projects.airBnbApp.exception.ResourceNotFoundException;
 import com.aditya.projects.airBnbApp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,9 +17,11 @@ import static com.aditya.projects.airBnbApp.util.AppUtils.getCurrentUser;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
 
 
     @Override
@@ -41,6 +46,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
         
         userRepository.save(user);
+    }
+
+    @Override
+    public UserDto getMyProfile() {
+        User user = getCurrentUser();
+        log.info("Fetching profile for user with Id: {}", user.getId());
+        return modelMapper.map(user, UserDto.class);
     }
 
     @Override
